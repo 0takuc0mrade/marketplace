@@ -1,3 +1,5 @@
+#![allow(clippy::too_many_arguments)]
+
 use soroban_sdk::{contract, contractimpl, token, Address, Env, Symbol};
 
 use crate::events;
@@ -46,6 +48,7 @@ fn validate_bounds(
 /// Invariants enforced (all panic with descriptive messages on violation):
 ///   1. Each fee must not exceed 10_000 bps (100%).
 ///   2. Combined fees must be strictly less than 10_000 bps.
+///
 /// Uses `checked_add` so `u32` overflow panics instead of silently saturating.
 fn validate_fees(platform_fee_bps: u32, liquidator_fee_bps: u32) {
     let total = platform_fee_bps
@@ -335,7 +338,10 @@ impl LendingContract {
         );
     }
 
+    /// Borrower tops up the collateral on an Active position to improve its
+    /// health factor and avoid liquidation without closing the position.
     pub fn add_collateral(env: Env, position_id: u64, amount: i128) {
+        extend_instance_ttl(&env);
         let mut position = get_position(&env, position_id);
         position.borrower.require_auth();
 
@@ -347,10 +353,15 @@ impl LendingContract {
             panic!("Amount must be greater than zero");
         }
 
+        let new_total = position
+            .collateral_amount
+            .checked_add(amount)
+            .unwrap_or_else(|| panic!("Collateral amount overflow"));
+
         let contract_address = env.current_contract_address();
         let collateral_client = token::Client::new(&env, &position.collateral_currency);
         collateral_client.transfer(&position.borrower, &contract_address, &amount);
-        position.collateral_amount += amount;
+        position.collateral_amount = new_total;
         set_position(&env, position_id, &position);
 
         events::emit_collateral_added(
