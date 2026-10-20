@@ -118,7 +118,9 @@ describe("token support", () => {
         new Error("Network timeout"),
       );
 
-      await expect(fetchSupportedTokens()).rejects.toThrow("Network timeout");
+      // fetchSupportedTokens should return fallback tokens on error
+      const tokens = await fetchSupportedTokens();
+      expect(tokens).toEqual(SUPPORTED_TOKENS);
     } catch (error) {
       console.error("Test failed:", error);
       throw error;
