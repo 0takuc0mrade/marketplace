@@ -65,5 +65,40 @@
   "disconnectWallet": "Disconnect Wallet",
   "connectYourWallet": "Connect Your Wallet",
   "connectWalletDesc": "You need to connect your wallet to access settings",
-  "connectWalletBtn": "Connect Wallet"
+  "connectWalletBtn": "Connect Wallet",
+  "lending": {
+    "borrower": {
+      "loading": "Inapakia madeni yako yanayoendelea…",
+      "empty": {
+        "title": "Hakuna Madeni Yanayoendelea",
+        "description": "Huna nafasi zozote za mikopo zilizofunguliwa. Vinjari uorodheshaji wa mikopo ili kukopa kwa kutumia NFT zako."
+      },
+      "table": {
+        "position": "Nafasi",
+        "currentDebt": "Deni la Sasa",
+        "healthFactor": "Hali ya Afya",
+        "collateral": "Dhamana",
+        "actions": "Vitendo"
+      },
+      "actions": {
+        "topUp": "Ongeza",
+        "repay": "Lipa",
+        "manage": "Simamia"
+      },
+      "details": {
+        "principal": "Kiasi Kikuu",
+        "accruedInterest": "Riba Iliyokusanywa",
+        "liquidationThreshold": "Kiwango cha Ufilisi",
+        "interestSchedule": "Ratiba ya Riba"
+      },
+      "positionNumber": "Nafasi #{{id}}",
+      "tokenNumber": "Ishara #{{id}}",
+      "aria": {
+        "sortByHealthFactor": "Panga kulingana na hali ya afya (kwa sasa {{order}})",
+        "managePosition": "Simamia nafasi {{id}}",
+        "ascending": "kupanda",
+        "descending": "kushuka"
+      }
+    }
+  }
 }

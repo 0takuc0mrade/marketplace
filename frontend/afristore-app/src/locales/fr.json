@@ -65,5 +65,40 @@
   "disconnectWallet": "Disconnect Wallet",
   "connectYourWallet": "Connect Your Wallet",
   "connectWalletDesc": "You need to connect your wallet to access settings",
-  "connectWalletBtn": "Connect Wallet"
+  "connectWalletBtn": "Connect Wallet",
+  "lending": {
+    "borrower": {
+      "loading": "Chargement de vos dettes actives…",
+      "empty": {
+        "title": "Aucune Dette Active",
+        "description": "Vous n'avez aucune position d'emprunt ouverte. Parcourez les annonces de prêt pour emprunter contre vos NFT."
+      },
+      "table": {
+        "position": "Position",
+        "currentDebt": "Dette Actuelle",
+        "healthFactor": "Facteur de Santé",
+        "collateral": "Garantie",
+        "actions": "Actions"
+      },
+      "actions": {
+        "topUp": "Recharger",
+        "repay": "Rembourser",
+        "manage": "Gérer"
+      },
+      "details": {
+        "principal": "Principal",
+        "accruedInterest": "Intérêts Courus",
+        "liquidationThreshold": "Seuil de Liquidation",
+        "interestSchedule": "Échéancier des Intérêts"
+      },
+      "positionNumber": "Position #{{id}}",
+      "tokenNumber": "Jeton #{{id}}",
+      "aria": {
+        "sortByHealthFactor": "Trier par facteur de santé (actuellement {{order}})",
+        "managePosition": "Gérer la position {{id}}",
+        "ascending": "croissant",
+        "descending": "décroissant"
+      }
+    }
+  }
 }

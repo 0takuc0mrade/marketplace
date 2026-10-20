@@ -65,5 +65,40 @@
   "disconnectWallet": "Disconnect Wallet",
   "connectYourWallet": "Connect Your Wallet",
   "connectWalletDesc": "You need to connect your wallet to access settings",
-  "connectWalletBtn": "Connect Wallet"
+  "connectWalletBtn": "Connect Wallet",
+  "lending": {
+    "borrower": {
+      "loading": "Loading your active debts…",
+      "empty": {
+        "title": "No Active Debts",
+        "description": "You do not have any open borrow positions. Browse lending listings to borrow against your NFTs."
+      },
+      "table": {
+        "position": "Position",
+        "currentDebt": "Current Debt",
+        "healthFactor": "Health Factor",
+        "collateral": "Collateral",
+        "actions": "Actions"
+      },
+      "actions": {
+        "topUp": "Top Up",
+        "repay": "Repay",
+        "manage": "Manage"
+      },
+      "details": {
+        "principal": "Principal",
+        "accruedInterest": "Accrued Interest",
+        "liquidationThreshold": "Liquidation Threshold",
+        "interestSchedule": "Interest Schedule"
+      },
+      "positionNumber": "Position #{{id}}",
+      "tokenNumber": "Token #{{id}}",
+      "aria": {
+        "sortByHealthFactor": "Sort by health factor (currently {{order}})",
+        "managePosition": "Manage position {{id}}",
+        "ascending": "ascending",
+        "descending": "descending"
+      }
+    }
+  }
 }
