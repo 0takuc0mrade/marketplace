@@ -708,6 +708,16 @@ export async function applyDecodedEvents(decodedEvents: any[], tx: any) {
   return toInsert;
 }
 
+// Runs `work` atomically. When the caller already holds a transaction client
+// (applyDecodedEvents passes one in), reuse it: Prisma does not allow nesting
+// $transaction on a transaction client.
+async function withTransaction<T>(
+  tx: any,
+  work: (client: any) => Promise<T>,
+): Promise<T> {
+  return tx ? work(tx) : prisma.$transaction((client) => work(client));
+}
+
 export async function processEvent(event: any, tx?: any, skipInsert = false) {
   const { eventType, listingId, actor, ledgerSequence, data } = event;
 
@@ -1261,8 +1271,8 @@ export async function processEvent(event: any, tx?: any, skipInsert = false) {
       }
 
       // Insert LendingPosition and update LendingListing in a single transaction
-      await db.$transaction([
-        db.lendingPosition.create({
+      await withTransaction(tx, async (client) => {
+        await client.lendingPosition.create({
           data: {
             positionId,
             listingId: parentListingId,
@@ -1281,15 +1291,15 @@ export async function processEvent(event: any, tx?: any, skipInsert = false) {
             createdAtLedger: ledgerSequence,
             updatedAtLedger: ledgerSequence,
           },
-        }),
-        db.lendingListing.update({
+        });
+        await client.lendingListing.update({
           where: { listingId: parentListingId },
           data: {
             status: "Filled",
             updatedAtLedger: ledgerSequence,
           },
-        }),
-      ]);
+        });
+      });
 
       console.log(
         `BORROW: created position ${positionId}, marked listing ${parentListingId} as Filled at ledger ${ledgerSequence}`,
@@ -1412,50 +1422,54 @@ export async function processEvent(event: any, tx?: any, skipInsert = false) {
       const startTime = BigInt(data.start_time ?? 0);
       const maxDurationSecs = BigInt(data.max_duration_secs ?? 0);
 
-      await db.lendingPosition.upsert({
-        where: { id },
-        create: {
-          id,
-          listingId: lId,
-          lender,
-          borrower,
-          nftContract,
-          tokenId,
-          declaredPriceUsd,
-          collateralCurrency,
-          collateralAmount,
-          interestScheduleBps,
-          liquidationThresholdBps,
-          startTime,
-          maxDurationSecs,
-          status: "Active",
-          createdAtLedger: ledgerSequence,
-          updatedAtLedger: ledgerSequence,
-        },
-        update: {
-          listingId: lId,
-          lender,
-          borrower,
-          nftContract,
-          tokenId,
-          declaredPriceUsd,
-          collateralCurrency,
-          collateralAmount,
-          interestScheduleBps,
-          liquidationThresholdBps,
-          startTime,
-          maxDurationSecs,
-          status: "Active",
-          updatedAtLedger: ledgerSequence,
-        },
-      });
-
-      if (lId > 0n) {
-        await db.lendingListing.updateMany({
-          where: { id: lId },
-          data: { status: "Filled", updatedAtLedger: ledgerSequence },
+      // Upsert the position and mark its listing Filled atomically so a failure
+      // between the two writes cannot leave them out of sync.
+      await withTransaction(tx, async (client) => {
+        await client.lendingPosition.upsert({
+          where: { id },
+          create: {
+            id,
+            listingId: lId,
+            lender,
+            borrower,
+            nftContract,
+            tokenId,
+            declaredPriceUsd,
+            collateralCurrency,
+            collateralAmount,
+            interestScheduleBps,
+            liquidationThresholdBps,
+            startTime,
+            maxDurationSecs,
+            status: "Active",
+            createdAtLedger: ledgerSequence,
+            updatedAtLedger: ledgerSequence,
+          },
+          update: {
+            listingId: lId,
+            lender,
+            borrower,
+            nftContract,
+            tokenId,
+            declaredPriceUsd,
+            collateralCurrency,
+            collateralAmount,
+            interestScheduleBps,
+            liquidationThresholdBps,
+            startTime,
+            maxDurationSecs,
+            status: "Active",
+            updatedAtLedger: ledgerSequence,
+          },
         });
-      }
+
+        if (lId > 0n) {
+          await client.lendingListing.updateMany({
+            where: { id: lId },
+            data: { status: "Filled", updatedAtLedger: ledgerSequence },
+          });
+        }
+      });
       break;
     }
 
