@@ -4,33 +4,43 @@ import request from 'supertest';
 
 // ── Mock Prisma before importing the router ───────────────────────────────────
 
-const mockPrisma = vi.hoisted(() => ({
-  listing: {
-    findMany: vi.fn(),
-    findFirst: vi.fn(),
-    count: vi.fn(),
-    aggregate: vi.fn(),
-  },
-  marketplaceEvent: {
-    findMany: vi.fn(),
-    findFirst: vi.fn(),
-    count: vi.fn(),
-  },
-  stakedNFT: {
-    findMany: vi.fn(),
-  },
-  collection: {
-    findMany: vi.fn(),
-    findUnique: vi.fn(),
-  },
-  userPreferences: {
-    findUnique: vi.fn(),
-    upsert: vi.fn(),
-  },
-  stakedNFT: {
-    findMany: vi.fn(),
-  },
-}));
+const mockPrisma = vi.hoisted(() => {
+  const prisma = {
+    listing: {
+      findMany: vi.fn(),
+      findFirst: vi.fn(),
+      count: vi.fn(),
+      aggregate: vi.fn(),
+    },
+    marketplaceEvent: {
+      findMany: vi.fn(),
+      findFirst: vi.fn(),
+      count: vi.fn(),
+    },
+    stakedNFT: {
+      findMany: vi.fn(),
+    },
+    collection: {
+      findMany: vi.fn(),
+      findUnique: vi.fn(),
+    },
+    userPreferences: {
+      findUnique: vi.fn(),
+      upsert: vi.fn(),
+    },
+    // Array form: Promise.all(ops). Interactive form: callback(prisma).
+    $transaction: vi.fn(async (arg: unknown) => {
+      if (typeof arg === 'function') {
+        return (arg as (tx: typeof prisma) => Promise<unknown>)(prisma);
+      }
+      if (Array.isArray(arg)) {
+        return Promise.all(arg);
+      }
+      return arg;
+    }),
+  };
+  return prisma;
+});
 
 const mockRedis = vi.hoisted(() => ({
   isOpen: false,
