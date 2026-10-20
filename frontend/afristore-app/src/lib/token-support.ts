@@ -21,8 +21,14 @@ export function resolveSupportedTokens(
 }
 
 export async function fetchSupportedTokens(): Promise<TokenConfig[]> {
-  const whitelist = await getTokenWhitelist();
-  return resolveSupportedTokens(whitelist);
+  try {
+    const whitelist = await getTokenWhitelist();
+    return resolveSupportedTokens(whitelist);
+  } catch (error) {
+    console.error("Failed to fetch supported tokens:", error);
+    // Return default supported tokens on error
+    return SUPPORTED_TOKENS;
+  }
 }
 
 export function ensureTokenOption(
@@ -54,23 +60,28 @@ export async function assertSupportedTokenAddress(
   tokenAddress: string | undefined,
   context: string,
 ): Promise<TokenConfig> {
-  const address = tokenAddress ?? DEFAULT_TOKEN.address;
+  try {
+    const address = tokenAddress ?? DEFAULT_TOKEN.address;
 
-  if (!isValidTokenAddress(address)) {
-    throw new Error(`Invalid ${context} token address.`);
+    if (!isValidTokenAddress(address)) {
+      throw new Error(`Invalid ${context} token address.`);
+    }
+
+    const configuredToken = getTokenConfigByAddress(address);
+    if (!configuredToken) {
+      throw new Error(`Unsupported ${context} token address.`);
+    }
+
+    const whitelist = (await getTokenWhitelist()).filter(isValidTokenAddress);
+    if (whitelist.length > 0 && !whitelist.includes(configuredToken.address)) {
+      throw new Error(
+        "Token address is not enabled in the current contract whitelist.",
+      );
+    }
+
+    return configuredToken;
+  } catch (error) {
+    console.error("Failed to assert supported token address:", error);
+    throw error instanceof Error ? error : new Error(String(error));
   }
-
-  const configuredToken = getTokenConfigByAddress(address);
-  if (!configuredToken) {
-    throw new Error(`Unsupported ${context} token address.`);
-  }
-
-  const whitelist = (await getTokenWhitelist()).filter(isValidTokenAddress);
-  if (whitelist.length > 0 && !whitelist.includes(configuredToken.address)) {
-    throw new Error(
-      "Token address is not enabled in the current contract whitelist.",
-    );
-  }
-
-  return configuredToken;
 }
