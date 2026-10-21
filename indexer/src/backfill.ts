@@ -4,8 +4,11 @@ import { pathToFileURL } from 'node:url';
 import prisma from './db.js';
 import { applyDecodedEvents, buildSyncStateLedgerData } from './poller.js';
 import { collectMarketplaceEvents } from './event-sync.js';
+import { logger } from './logger.js';
 
 dotenv.config();
+
+const log = logger.child({ component: 'backfill' });
 
 type BackfillArgs = {
   rpcUrl: string;
@@ -61,7 +64,7 @@ async function fetchLedgerHash(server: rpc.Server, ledger: number): Promise<stri
 
     return ledgersRes.ledgers?.[0]?.hash ?? null;
   } catch (err) {
-    console.error({ msg: 'Failed to fetch ledger hash during backfill', ledger, err });
+    log.error('Failed to fetch ledger hash during backfill', { ledger, err });
     return null;
   }
 }
@@ -102,8 +105,7 @@ export async function runBackfill() {
     return { insertedCount: inserted.length };
   });
 
-  console.log({
-    msg: 'Backfill complete',
+  log.info('Backfill complete', {
     startLedger,
     endLedger: networkLatestLedger,
     insertedCount,
@@ -113,7 +115,7 @@ export async function runBackfill() {
 
 if (process.argv[1] && process.argv[1].includes('backfill')) {
   runBackfill().catch((err) => {
-    console.error({ msg: 'Backfill failed', err: err instanceof Error ? err.message : String(err) });
+    log.error('Backfill failed', { err });
     process.exit(1);
   });
 }
