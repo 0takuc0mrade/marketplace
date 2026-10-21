@@ -28,6 +28,7 @@ export function TopUpCollateralModal({
 }: TopUpCollateralModalProps) {
   const { addCollateral, isAddingCollateral, error } = useAddCollateral(borrowerPublicKey);
   const [amount, setAmount] = useState("");
+  const [submitError, setSubmitError] = useState<string | null>(null);
   
   const currentDebtUsd = useMemo(() => {
     if (!debt) return 0n;
@@ -60,21 +61,41 @@ export function TopUpCollateralModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!amount || isNaN(Number(amount))) return;
-    
+    setSubmitError(null);
+
+    const parsed = Number(amount);
+    if (!amount || !Number.isFinite(parsed) || parsed <= 0) {
+      setSubmitError("Enter an amount greater than zero");
+      return;
+    }
+
     // convert amount to the 7-decimal fixed-point expected by the contract
-    const addedAmount = BigInt(Math.floor(Number(amount) * 10_000_000));
-    
-    const success = await addCollateral({
-      positionId: debt.positionId,
-      amount: addedAmount,
-      collateralCurrency: debt.collateralCurrency,
-      borrowerPublicKey: borrowerPublicKey || undefined,
-    });
-    
-    if (success) {
-      setAmount("");
-      onClose();
+    let addedAmount: bigint;
+    try {
+      addedAmount = BigInt(Math.floor(parsed * 10_000_000));
+    } catch {
+      setSubmitError("Enter a valid amount");
+      return;
+    }
+
+    try {
+      const success = await addCollateral({
+        positionId: debt.positionId,
+        amount: addedAmount,
+        collateralCurrency: debt.collateralCurrency,
+        borrowerPublicKey: borrowerPublicKey || undefined,
+      });
+
+      if (success) {
+        setAmount("");
+        onClose();
+      }
+    } catch (err) {
+      // The hook already surfaces a readable message; this is the last
+      // resort so the modal can never leave an unhandled rejection.
+      setSubmitError(
+        err instanceof Error ? err.message : "Failed to add collateral"
+      );
     }
   };
 
@@ -99,9 +120,12 @@ export function TopUpCollateralModal({
 
         <div className="p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <div className="rounded-xl bg-red-50 p-4 text-sm text-red-600">
-                {error}
+            {(error || submitError) && (
+              <div
+                data-testid="topup-error"
+                className="rounded-xl bg-red-50 p-4 text-sm text-red-600"
+              >
+                {submitError ?? error}
               </div>
             )}
             
